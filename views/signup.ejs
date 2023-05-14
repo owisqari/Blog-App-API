@@ -30,26 +30,14 @@
       <!-- Left links -->
       <ul class="navbar-nav me-auto mb-2 mb-lg-0">
         <li class="nav-item">
-          <a class="nav-link" href="/profile">Profile</a>
+          <a class="nav-link" href="/">Home</a>
         </li>
       </ul>
       <!-- Left links -->
       <% if (isLogged) { %>
-      <div class="d-flex align-items-center">
-        <a
-          href="/login"
-          style="visibility: hidden"
-          class="btn btn-link px-3 me-2"
-        >
-          Login
-        </a>
-        <a
-          href="/signup"
-          style="visibility: hidden"
-          class="btn btn-primary me-3"
-        >
-          Sign up
-        </a>
+        <div class="d-flex align-items-center">
+          <a href="/logout" class="btn btn-link px-3 me-2"> Logout </a>
+        </div>
       </div>
     </div>
     <% }else{ %>
@@ -69,11 +57,7 @@
       </div>
     </div>
       <% } %>
-      <% if (isLogged) { %>
-        <div class="d-flex align-items-center">
-          <a href="/logout" class="btn btn-link px-3 me-2"> Logout </a>
-        </div>
-      <% } %>
+     
       
     <!-- Collapsible wrapper -->
   </div>
@@ -82,6 +66,15 @@
 
     <!-- Section: Design Block -->
     <section class="text-center">
+      <% if (isLogged) { %>
+        <div class="card-body py-5 px-md-5">
+          <div class="row d-flex justify-content-center">
+            <div class="col-lg-8">
+              <h2 class="fw-bold mb-5">Your are signed in</h2>
+              <a href="/" class="btn btn-primary btn-block mb-4">
+                Home
+              </a>
+      <% }else{ %>
       <!-- Background image -->
       <div
         class="p-5 bg-image"
@@ -116,7 +109,7 @@
                   />
                   <label class="form-label" for="form3Example1">Username</label>
                 </div>
-
+                
                 <!-- Email input -->
                 <div class="form-outline mb-4">
                   <input
@@ -169,6 +162,7 @@
           </div>
         </div>
       </div>
+      <% } %>
     </section>
     <!-- Section: Design Block -->
     <script
