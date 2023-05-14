@@ -20,23 +20,11 @@
       rel="stylesheet"
     />
     <style>
-      .gradient-custom-2 {
-        /* fallback for old browsers */
-        background: #fbc2eb;
-
-        /* Chrome 10-25, Safari 5.1-6 */
-        background: -webkit-linear-gradient(
-          to right,
-          rgba(251, 194, 235, 1),
-          rgba(166, 193, 238, 1)
-        );
-
-        /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
-        background: linear-gradient(
-          to right,
-          rgba(251, 194, 235, 1),
-          rgba(166, 193, 238, 1)
-        );
+      body {
+        background-color: #e0e0e0;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 1600 800'%3E%3Cg fill-opacity='0.42'%3E%3Cpolygon fill='%23d7c3c3' points='1600 160 0 460 0 350 1600 50'/%3E%3Cpolygon fill='%23d59e9e' points='1600 260 0 560 0 450 1600 150'/%3E%3Cpolygon fill='%23db7171' points='1600 360 0 660 0 550 1600 250'/%3E%3Cpolygon fill='%23e93c3c' points='1600 460 0 760 0 650 1600 350'/%3E%3Cpolygon fill='%23FF0000' points='1600 800 0 800 0 750 1600 450'/%3E%3C/g%3E%3C/svg%3E");
+        background-attachment: fixed;
+        background-size: cover;
       }
     </style>
     <title>Document</title>
@@ -51,13 +39,13 @@
           <!-- Left links -->
           <ul class="navbar-nav mr-auto">
             <li class="nav-item">
-              <a class="nav-link" href="/">home</a>
+              <a class="nav-link text-dark" href="/">home</a>
             </li>
           </ul>
           <!-- Left links -->
 
           <div class="d-flex align-items-center">
-            <a href="/logout" class="btn btn-link px-3 me-2"> Logout </a>
+            <a href="/logout" class="btn btn-danger px-3 me-2"> Logout </a>
           </div>
         </div>
         <!-- Collapsible wrapper -->
@@ -72,7 +60,7 @@
             <div class="card">
               <div
                 class="rounded-top text-white d-flex flex-row"
-                style="background-color: #000; height: 200px"
+                style="background-color: #2e2e2e; height: 200px"
               >
                 <div class="ms-4 mt-5 d-flex flex-column" style="width: 150px">
                   <img

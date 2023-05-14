@@ -33,7 +33,13 @@ app.set("views", "./views");
 
 //home route here (render the home page)
 app.get("/", (req, res) => {
-  res.render("home.ejs", { isLogged: req.session.userId });
+  UsersDB.find()
+    .then((users) => {
+      res.render("home.ejs", { users, isLogged: req.session.userId });
+    })
+    .catch((err) => {
+      console.log("Error: ", err);
+    });
 });
 
 // signup route here (render the signup form)
