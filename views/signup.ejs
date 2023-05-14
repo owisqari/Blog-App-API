@@ -28,95 +28,24 @@ background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/s
 background-attachment: fixed;
 background-size: cover;
     }
-  button {
-    position: relative;
-    border: none;
-    background: transparent;
-    padding: 0;
-    cursor: pointer;
-    outline-offset: 4px;
-    transition: filter 250ms;
-    user-select: none;
-    touch-action: manipulation;
-   }
-   
-   .shadow {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    border-radius: 12px;
-    background: hsl(0deg 0% 0% / 0.25);
-    will-change: transform;
-    transform: translateY(2px);
-    transition: transform
-       600ms
-       cubic-bezier(.3, .7, .4, 1);
-   }
-   
-   .edge {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    border-radius: 12px;
-    background: linear-gradient(
-       to left,
-       hsl(340deg 100% 16%) 0%,
-       hsl(340deg 100% 32%) 8%,
-       hsl(340deg 100% 32%) 92%,
-       hsl(340deg 100% 16%) 100%
-     );
-   }
-   
-   .front {
-    display: block;
-    position: relative;
-    padding: 12px 27px;
-    border-radius: 12px;
-    font-size: 1.1rem;
-    color: white;
-    background: hsl(345deg 100% 47%);
-    will-change: transform;
-    transform: translateY(-4px);
-    transition: transform
-       600ms
-       cubic-bezier(.3, .7, .4, 1);
-   }
-   
-   button:hover {
-    filter: brightness(110%);
-   }
-   
-   button:hover .front {
-    transform: translateY(-6px);
-    transition: transform
-       250ms
-       cubic-bezier(.3, .7, .4, 1.5);
-   }
-   
-   button:active .front {
-    transform: translateY(-2px);
-    transition: transform 34ms;
-   }
-   
-   button:hover .shadow {
-    transform: translateY(4px);
-    transition: transform
-       250ms
-       cubic-bezier(.3, .7, .4, 1.5);
-   }
-   
-   button:active .shadow {
-    transform: translateY(1px);
-    transition: transform 34ms;
-   }
-   
-   button:focus:not(:focus-visible) {
-    outline: none;
-   }</style>
+  
+    .button {
+        color: #ecf0f1;
+        font-size: 17px;
+        background-color: #c10c0c;
+        border: 1px solid #b50909;
+        border-radius: 5px;
+        padding: 10px;
+        width: -moz-available;
+        box-shadow: 0px 6px 0px #780202;
+        transition: all 0.1s;
+      }
+
+      .button:active {
+        box-shadow: 0px 2px 0px #5b0303;
+        position: relative;
+        top: 2px;
+      }</style>
   <body>
  <!-- Navbar -->
  <nav class="navbar navbar-expand-lg navbar-light bg-light">
@@ -133,7 +62,7 @@ background-size: cover;
       <!-- Left links -->
       <% if (isLogged) { %>
         <div class="d-flex align-items-center">
-          <a href="/logout" class="btn btn-link px-3 me-2"> Logout </a>
+          <a href="/logout" class="btn btn-danger px-3 me-2"> Logout </a>
         </div>
       </div>
     </div>
@@ -162,113 +91,123 @@ background-size: cover;
 </nav>
 
     <!-- Section: Design Block -->
-    <section class="text-center">
       <% if (isLogged) { %>
-        <div class="card-body py-5 px-md-5">
-          <div class="row d-flex justify-content-center">
-            <div class="col-lg-8">
-              <h2 class="fw-bold mb-5">Your are signed in</h2>
-              <a href="/" class="btn btn-dark btn-block mb-4">
-                Home
-              </a>
+        <section class="vh-100 gradient-custom">
+          <div class="container py-5 h-100">
+            <div class="row d-flex justify-content-center align-items-center h-100">
+              <div class="col-12 col-md-8 col-lg-6 col-xl-5">
+                <div class="card bg-dark text-white" style="border-radius: 1rem">
+                  <div class="card-body p-5 text-center">
+                    <div class="mb-md-5 mt-md-4 pb-5">
+                      <h2 class="fw-bold mb-2 text-uppercase">
+                        Your are logged in
+                      </h2>
+                      <a class="btn btn-danger btn-lg px-5" href="/"> Home </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
       <% }else{ %>
-      <!-- Background image -->
-      <div
-        class="p-5 bg-image"
-        style="
-          height: 300px;
-        "
-      ></div>
-      <!-- Background image -->
-
-      <div
-        class="card mx-4 mx-md-5 shadow-5-strong"
-        style="
-          margin-top: -100px;
-          background: hsla(0, 0%, 100%, 0.8);
-          backdrop-filter: blur(30px);
-        "
-      >
-        <div class="card-body py-5 px-md-5">
-          <div class="row d-flex justify-content-center">
-            <div class="col-lg-8">
-              <h2 class="fw-bold mb-5">Sign up now</h2>
+          
               <form method="post" action="/signup">
-                <!-- 2 column grid layout with text inputs for the first and last names -->
 
-                <div class="form-outline mb-4">
-                  <input
-                  required
-                    type="text"
-                    id="form3Example1"
-                    name="username"
-                    class="form-control"
-                  />
-                  <label class="form-label" for="form3Example1">Username</label>
-                </div>
-                
-                <!-- Email input -->
-                <div class="form-outline mb-4">
-                  <input
-                  required
-                    type="email"
-                    id="form3Example3"
-                    name="email"
-                    class="form-control"
-                  />
-                  <label class="form-label" for="form3Example3"
-                    >Email address</label
-                  >
-                </div>
-                <div class="form-outline mb-4">
-                  <input
-                  required
-                    type="text"
-                    id="form3Example3"
-                    name="city"
-                    class="form-control"
-                  />
-                  <label class="form-label" for="form3Example3">city</label>
-                </div>
-                <div class="form-outline mb-4">
-                  <textarea
-                  required
-                    name="about"
-                    type="text"
-                    id="form3Example4"
-                    class="form-control"
-                    style="resize: none"
-                  ></textarea>
-                  <label class="form-label" for="form3Example4">about</label>
-                </div>
 
-                <!-- Password input -->
-                <div class="form-outline mb-4">
-                  <input
-                  required
-                    name="password"
-                    type="password"
-                    id="form3Example4"
-                    class="form-control"
-                  />
-                  <label class="form-label" for="form3Example4">Password</label>
-                </div>
+<section class="vh-100 gradient-custom">
+  <div class="container py-5 h-100">
+    <div
+      class="row d-flex justify-content-center align-items-center h-100"
+    >
+      <div class="col-12 col-md-8 col-lg-6 col-xl-5">
+        <div class="card bg-dark text-white" style="border-radius: 1rem">
+          <div class="card-body p-5 text-center">
+            <div class="mb-md-5 mt-md-4 pb-5">
+              <h2 class="fw-bold mb-2 text-uppercase">Login</h2>
+              <p class="text-white-50 mb-5">
+                Please enter your login and password!
+              </p>
 
-                <!-- Submit button -->
-                <button type="submit">
-                  <span class="shadow"></span>
-                  <span class="edge"></span>
-                  <span class="front text"> 
-                    Sign up
-                  </span>
-                </button>
-              </form>
+              <div class="form-outline form-white mb-4">
+                <input
+                  required
+                  type="text"
+                  id="typeEmailX"
+                  name="username"
+                  class="form-control form-control-lg"
+                />
+                <label class="form-label" for="typeEmailX"
+                  >username</label
+                >
+              </div>
+              <div class="form-outline form-white mb-4">
+                <input
+                required
+                  type="email"
+                  id="form3Example3"
+                  name="email"
+                  class="form-control"
+                />
+                <label class="form-label" for="form3Example3"
+                  >Email address</label
+                >
+              </div>
+              <div class="form-outline form-white mb-4">
+                <input
+                required
+                  type="text"
+                  id="form3Example3"
+                  name="city"
+                  class="form-control"
+                />
+                <label class="form-label" for="form3Example3">city</label>
+              </div>
+              <div class="form-outline form-white mb-4">
+                <textarea
+                required
+                  name="about"
+                  type="text"
+                  id="form3Example4"
+                  class="form-control"
+                  style="resize: none"
+                ></textarea>
+                <label class="form-label" for="form3Example4">about</label>
+              </div>
+              <div class="form-outline form-white mb-4">
+                <input
+                  required
+                  type="password"
+                  id="typePasswordX"
+                  name="password"
+                  class="form-control form-control-lg"
+                />
+                <label class="form-label" for="typePasswordX"
+                  >Password</label
+                >
+              </div>
+
+              <button class="button" type="submit">Login</button>
+            </div>
+
+            <div>
+              <p class="mb-0">
+                have an account?
+                <a href="/login" class="text-white-50 fw-bold"
+                  >Login Up</a
+                >
+              </p>
             </div>
           </div>
         </div>
       </div>
+    </div>
+  </div>
+</section>
+              </form>
+            
       <% } %>
-    </section>
+ 
     <!-- Section: Design Block -->
     <script
       type="text/javascript"
@@ -276,3 +215,5 @@ background-size: cover;
     ></script>
   </body>
 </html>
+
+

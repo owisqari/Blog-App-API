@@ -48,6 +48,49 @@
     <title>session</title>
   </head>
   <body>
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+  <!-- Container wrapper -->
+  <div class="container">
+    <!-- Collapsible wrapper -->
+    <div class="collapse navbar-collapse" id="navbarButtonsExample">
+      <!-- Left links -->
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+        <li class="nav-item">
+          <a class="nav-link" href="/">Home</a>
+        </li>
+      </ul>
+      <!-- Left links -->
+      <% if (isLogged) { %>
+        <div class="d-flex align-items-center">
+          <a href="/logout" class="btn btn-danger px-3 me-2"> Logout </a>
+        </div>
+      </div>
+    </div>
+    <% }else{ %>
+      <div class="d-flex align-items-center">
+        <a
+          href="/login"
+          class="btn btn-danger px-3 me-2"
+        >
+          Login
+        </a>
+        <a
+          href="/signup"
+          class="btn btn-dark me-3"
+        >
+          Sign up
+        </a>
+      </div>
+    </div>
+      <% } %>
+     
+      
+    <!-- Collapsible wrapper -->
+  </div>
+  <!-- Container wrapper -->
+</nav>
+
     <% if (isLogged) { %>
     <section class="vh-100 gradient-custom">
       <div class="container py-5 h-100">
@@ -59,9 +102,7 @@
                   <h2 class="fw-bold mb-2 text-uppercase">
                     Your are logged in
                   </h2>
-                  <a class="btn btn-outline-light btn-lg px-5" href="/">
-                    Home
-                  </a>
+                  <a class="btn btn-danger btn-lg px-5" href="/"> Home </a>
                 </div>
               </div>
             </div>
