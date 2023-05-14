@@ -27,24 +27,27 @@ url
     console.log("Cannot connect to the database", err);
   });
 
-app.get("/", (req, res) => {
-  res.send("hello");
-});
 //config ejs
 app.set("view engine", "ejs");
 app.set("views", "./views");
 
-app.get("/home", (req, res) => {
-  res.send("home");
+//home route here (render the home page)
+app.get("/", (req, res) => {
+  res.render("home.ejs", { isLogged: req.session.userId });
 });
 
+// signup route here (render the signup form)
 app.get("/signup", (req, res) => {
-  res.render("signup.ejs");
+  res.render("signup.ejs", { isLogged: req.session.userId });
 });
+
+//signup route and logic here (use bcrypt to hash the password)
 app.post("/signup", (req, res) => {
   const username = req.body.username;
   const password = req.body.password;
   const email = req.body.email;
+  const city = req.body.city;
+  const about = req.body.about;
   bcrypt
     .genSalt(saltRounds)
     .then(() => {
@@ -55,6 +58,8 @@ app.post("/signup", (req, res) => {
         username: username,
         password: hash,
         email: email,
+        city: city,
+        about: about,
       })
         .then(() => {
           res.redirect("/login");
@@ -66,38 +71,56 @@ app.post("/signup", (req, res) => {
     .catch((err) => console.error(err.message));
 });
 
+// login route here (render the login form)
 app.get("/login", (req, res) => {
-  res.render("login.ejs");
+  res.render("login.ejs", { isLogged: req.session.userId });
 });
-
+// login route and logic here (use bcrypt to compare the password)
 app.post("/login", (req, res) => {
   const username = req.body.username;
   const password = req.body.password;
 
   UsersDB.findOne({ username })
     .then((user) => {
-      const hash = user.password;
-      bcrypt
-        .compare(password, hash)
-
-        .then((result) => {
+      if (user) {
+        const hash = user.password;
+        bcrypt.compare(password, hash).then((result) => {
           if (result) {
             req.session.userId = user._id;
             console.log(req.session);
-            res.redirect("/home");
+            res.redirect("/");
           } else {
             console.log("User not found");
             res.redirect("/login");
           }
         });
+      } else {
+        console.log("User not found");
+        res.redirect("/login");
+      }
     })
     .catch((err) => {
       console.log("Error: ", err);
     });
 });
+//you can use this to check if the user is logged in or not
+app.get("/profile", (req, res) => {
+  if (req.session.userId) {
+    UsersDB.findOne({ _id: req.session.userId }).then((user) => {
+      res.render("profile.ejs", { user });
+    });
+  } else {
+    res.redirect("/login");
+  }
+});
 
+// logout route here (destroy the session)
 app.get("/logout", (req, res) => {
   req.session.destroy();
-  res.send(req.session);
+  res.redirect("/");
 });
-app.listen(2020, () => console.log("Server running on port 2020"));
+
+// listen to port 2020
+app.listen(2020, () => {
+  console.log("Server running on port 2020");
+});
