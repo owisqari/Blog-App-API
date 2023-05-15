@@ -1,25 +1,26 @@
-const app = require("express")();
+const express = require("express");
+const app = express();
 const url = require("mongoose");
 const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
 const bcrypt = require("bcrypt");
 const session = require("express-session");
 const UsersDB = require("../modules/Users");
-const saltRounds = 10;
-const myPlaintextPassword = "s0//P4$$w0rD";
-const someOtherPlaintextPassword = "not_bacon";
+require("dotenv").config();
+
+const saltRounds = process.env.SALT_ROUNDS;
+
 app.use(cookieParser());
 app.use(
   session({
-    secret: "my secret",
+    secret: process.env.SECRET,
   })
 );
 app.use(bodyParser.urlencoded({ extended: false }));
-
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 url
-  .connect(
-    "mongodb+srv://admin:admin@cluster0.e0ld66h.mongodb.net/?retryWrites=true&w=majority"
-  )
+  .connect(process.env.DB_URL)
   .then(() => {
     console.log("Connected to the database");
   })
@@ -126,7 +127,168 @@ app.get("/logout", (req, res) => {
   res.redirect("/");
 });
 
+// get all users api here
+app.get("/usersAPI", (req, res) => {
+  UsersDB.find()
+    .then((users) => {
+      if (users) {
+        res.status(200).json(users);
+      } else {
+        res.status(404).json({ message: "User not found" });
+      }
+    })
+    .catch((err) => {
+      console.log("Error: ", err);
+    });
+});
+
+// get user by id api here
+app.get("/usersAPI/:id", (req, res) => {
+  UsersDB.findById(req.params.id)
+    .then((user) => {
+      if (user) {
+        res.status(200).json(user);
+      } else {
+        res.status(404).json({ message: "User not found" });
+      }
+    })
+    .catch((err) => {
+      console.log("Error: ", err);
+    });
+});
+
+// creeate users api here
+app.post("/RegisterAPI", (req, res) => {
+  const username = req.body.username;
+  const password = req.body.password;
+  const email = req.body.email;
+  const city = req.body.city;
+  const about = req.body.about;
+
+  bcrypt
+    .genSalt(saltRounds)
+    .then(() => {
+      return bcrypt.hash(password, saltRounds);
+    })
+    .then((hash) => {
+      if (password && username && email && city && about) {
+        UsersDB.create({
+          username: username,
+          password: hash,
+          email: email,
+          city: city,
+          about: about,
+        })
+          .then((savedUser) => {
+            res.status(200).json(savedUser);
+          })
+          .catch((err) => {
+            console.log("Error: ", err);
+          });
+      } else {
+        res.status(400).json({ message: "Please fill all the fields" });
+      }
+    })
+    .catch((err) => {
+      console.error(err);
+    });
+});
+
+app.post("/CreateUserAPI", (req, res) => {
+  const username = req.body.username;
+  const password = req.body.password;
+  const email = req.body.email;
+  const city = req.body.city;
+  const about = req.body.about;
+  if (password && username && email && city && about) {
+    UsersDB.create({
+      username: username,
+      password: password,
+      email: email,
+      city: city,
+      about: about,
+    })
+      .then((savedUser) => {
+        res.status(200).json(savedUser);
+      })
+      .catch((err) => {
+        console.log("Error: ", err);
+      });
+  } else {
+    res.status(400).json({ message: "Please fill all the fields" });
+  }
+});
+
+//users update api here
+app.put("/UpdateUserAPI/:id", (req, res) => {
+  const username = req.body.username;
+  const password = req.body.password;
+  const email = req.body.email;
+  const city = req.body.city;
+  const about = req.body.about;
+  UsersDB.findByIdAndUpdate(req.params.id, {
+    username: username,
+    password: password,
+    email: email,
+    city: city,
+    about: about,
+  })
+    .then((updateUser) => {
+      if (updateUser) {
+        res.status(200).json(updateUser);
+      } else {
+        res.status(404).json({ message: "User not found" });
+      }
+    })
+    .catch((err) => {
+      console.log(err);
+    });
+});
+
+// delete users api here
+app.delete("/DeleteUserAPI/:id", (req, res) => {
+  UsersDB.findByIdAndDelete(req.params.id)
+    .then((deleteUser) => {
+      if (deleteUser) {
+        res.status(200).json(deleteUser);
+      } else {
+        res.status(404).json({ message: "User not found" });
+      }
+    })
+    .catch((err) => {
+      console.log(err);
+    });
+});
+
+// login api here
+app.post("/loginAPI", (req, res) => {
+  const username = req.body.username;
+  const password = req.body.password;
+  UsersDB.findOne({ username })
+    .then((user) => {
+      if (user) {
+        const hash = user.password;
+        bcrypt
+          .compare(password, hash)
+          .then((result) => {
+            if (result) {
+              res.status(200).json(user);
+            } else {
+              res.status(404).json({ message: "Wrong credentials" });
+            }
+          })
+          .catch((err) => {
+            res.json({ err: err });
+          });
+      } else {
+        res.status(404).json({ message: "User not found" });
+      }
+    })
+    .catch((err) => {
+      console.log("Error: ", err);
+    });
+});
 // listen to port 2020
-app.listen(2020, () => {
+app.listen(process.env.PORT, () => {
   console.log("Server running on port 2020");
 });
