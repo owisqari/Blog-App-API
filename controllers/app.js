@@ -128,7 +128,7 @@ app.get("/logout", (req, res) => {
 });
 
 // get all users api here
-app.get("/usersAPI", (req, res) => {
+app.get("/list", (req, res) => {
   UsersDB.find()
     .then((users) => {
       if (users) {
@@ -290,5 +290,5 @@ app.post("/loginAPI", (req, res) => {
 });
 // listen to port 2020
 app.listen(process.env.PORT, () => {
-  console.log("Server running on port 2020");
+  console.log("Server running on port 8080");
 });
