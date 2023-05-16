@@ -5,7 +5,10 @@ const Schema = mongoose.Schema;
 const usersSchema = new Schema(
   {
     username: String,
-    password: String,
+    password: {
+      type: String,
+      select: false,
+    },
     email: String,
     about: String,
     city: String,

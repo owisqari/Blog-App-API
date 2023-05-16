@@ -3,12 +3,12 @@ const app = express();
 const url = require("mongoose");
 const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
+const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const session = require("express-session");
 const UsersDB = require("../modules/Users");
 require("dotenv").config();
-
-const saltRounds = process.env.SALT_ROUNDS;
+const saltRounds = Number(process.env.SALT_ROUNDS);
 
 app.use(cookieParser());
 app.use(
@@ -32,6 +32,23 @@ url
 app.set("view engine", "ejs");
 app.set("views", "./views");
 
+// verify token middleware
+const verifyToken = (req, res, next) => {
+  // return res.send(req.headers);
+  if (!req.headers.authorization) {
+    return res.status(401).json({ errorMessage: "unauthorized" });
+  }
+
+  const token = req.headers.authorization.split(" ")[1];
+
+  jwt.verify(token, process.env.JWT_SECRET, (err, data) => {
+    if (err) {
+      return res.status(401).json({ errorMessage: "unauthorized" });
+    } else {
+      next();
+    }
+  });
+};
 //home route here (render the home page)
 app.get("/", (req, res) => {
   UsersDB.find()
@@ -91,8 +108,8 @@ app.post("/login", (req, res) => {
     .then((user) => {
       if (user) {
         const hash = user.password;
-        bcrypt.compare(password, hash).then((result) => {
-          if (result) {
+        bcrypt.compare(password, hash).then((isPassword) => {
+          if (isPassword) {
             req.session.userId = user._id;
             console.log(req.session);
             res.redirect("/");
@@ -180,7 +197,7 @@ app.post("/RegisterAPI", (req, res) => {
           about: about,
         })
           .then((savedUser) => {
-            res.status(200).json(savedUser);
+            res.status(201).json(savedUser);
           })
           .catch((err) => {
             console.log("Error: ", err);
@@ -201,19 +218,26 @@ app.post("/CreateUserAPI", (req, res) => {
   const city = req.body.city;
   const about = req.body.about;
   if (password && username && email && city && about) {
-    UsersDB.create({
-      username: username,
-      password: password,
-      email: email,
-      city: city,
-      about: about,
-    })
-      .then((savedUser) => {
-        res.status(200).json(savedUser);
-      })
-      .catch((err) => {
-        console.log("Error: ", err);
-      });
+    // check if username exist
+    UsersDB.findOne({ username }).then((user) => {
+      if (user) {
+        res.status(400).json({ message: "Username already exist" });
+      } else {
+        UsersDB.create({
+          username: username,
+          password: password,
+          email: email,
+          city: city,
+          about: about,
+        })
+          .then((savedUser) => {
+            res.status(201).json(savedUser);
+          })
+          .catch((err) => {
+            console.log("Error: ", err);
+          });
+      }
+    });
   } else {
     res.status(400).json({ message: "Please fill all the fields" });
   }
@@ -237,7 +261,7 @@ app.put("/UpdateUserAPI/:id", (req, res) => {
       if (updateUser) {
         res.status(200).json(updateUser);
       } else {
-        res.status(404).json({ message: "User not found" });
+        res.status(401).json({ message: "User not found" });
       }
     })
     .catch((err) => {
@@ -252,7 +276,7 @@ app.delete("/DeleteUserAPI/:id", (req, res) => {
       if (deleteUser) {
         res.status(200).json(deleteUser);
       } else {
-        res.status(404).json({ message: "User not found" });
+        res.status(401).json({ message: "User not found" });
       }
     })
     .catch((err) => {
@@ -270,24 +294,110 @@ app.post("/loginAPI", (req, res) => {
         const hash = user.password;
         bcrypt
           .compare(password, hash)
-          .then((result) => {
-            if (result) {
+          .then((isPassword) => {
+            if (isPassword) {
               res.status(200).json(user);
             } else {
-              res.status(404).json({ message: "Wrong credentials" });
+              res.status(401).json({ message: "Wrong credentials" });
             }
           })
           .catch((err) => {
             res.json({ err: err });
           });
       } else {
-        res.status(404).json({ message: "User not found" });
+        res.status(401).json({ message: "User not found" });
       }
     })
     .catch((err) => {
       console.log("Error: ", err);
     });
 });
+
+app.post("/api/login", (req, res) => {
+  const username = req.body.username;
+  const password = req.body.password;
+  UsersDB.findOne({ username })
+    .then((user) => {
+      if (user) {
+        const hash = user.password;
+        bcrypt
+          .compare(password, hash)
+          .then((isPassword) => {
+            if (isPassword) {
+              const token = jwt.sign({ user }, process.env.JWT_SECRET, {
+                expiresIn: "1h",
+              });
+              res.status(200).json({ token });
+            } else {
+              res.status(401).json({ message: "Wrong credentials" });
+            }
+          })
+          .catch((err) => {
+            res.json({ err: err });
+          });
+      } else {
+        res.status(401).json({ message: "User not found" });
+      }
+    })
+    .catch((err) => {
+      console.log("Error: ", err);
+    });
+});
+
+app.get("/api/profile", verifyToken, (req, res) => {
+  res.status(200).json({ message: "Welcome to the profile page" });
+});
+
+app.get("/api/home", verifyToken, (req, res) => {
+  res.status(200).json({ message: "Welcome to the home page" });
+});
+
+// api/register  after register user will logic auto
+app.post("/api/register", (req, res) => {
+  const username = req.body.username;
+  const password = req.body.password;
+  const email = req.body.email;
+  const city = req.body.city;
+  const about = req.body.about;
+  const saltRounds = 10;
+  if (password && username && email && city && about) {
+    UsersDB.findOne({ username }).then((user) => {
+      if (user) {
+        res.status(400).json({ message: "Username already exist" });
+      } else {
+        bcrypt
+          .genSalt(saltRounds)
+          .then(() => {
+            return bcrypt.hash(password, saltRounds);
+          })
+          .then((hash) => {
+            UsersDB.create({
+              username: username,
+              password: hash,
+              email: email,
+              city: city,
+              about: about,
+            })
+              .then((savedUser) => {
+                const token = jwt.sign({ savedUser }, process.env.JWT_SECRET, {
+                  expiresIn: "1h",
+                });
+                res.status(201).json({ token, savedUser });
+              })
+              .catch((err) => {
+                console.log("Error: ", err);
+              });
+          })
+          .catch((err) => {
+            console.error(err);
+          });
+      }
+    });
+  } else {
+    res.status(400).json({ message: "Please fill all the fields" });
+  }
+});
+
 // listen to port 2020
 app.listen(process.env.PORT, () => {
   console.log("Server running on port 8080");
