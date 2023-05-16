@@ -7,6 +7,7 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const session = require("express-session");
 const UsersDB = require("../modules/Users");
+const BlogsDB = require("../modules/Blogs");
 require("dotenv").config();
 const saltRounds = Number(process.env.SALT_ROUNDS);
 
@@ -47,6 +48,7 @@ const verifyToken = (req, res, next) => {
     } else {
       next();
     }
+    return data;
   });
 };
 //home route here (render the home page)
@@ -317,6 +319,7 @@ app.post("/api/login", (req, res) => {
   const username = req.body.username;
   const password = req.body.password;
   UsersDB.findOne({ username })
+    .select("+password")
     .then((user) => {
       if (user) {
         const hash = user.password;
@@ -396,6 +399,39 @@ app.post("/api/register", (req, res) => {
   } else {
     res.status(400).json({ message: "Please fill all the fields" });
   }
+});
+
+app.post("/api/createBlog", verifyToken, (req, res) => {
+  const token = req.headers.authorization.split(" ")[1];
+  jwt.verify(token, process.env.JWT_SECRET, (err, data) => {
+    if (err) {
+      res.status(401).json({ errorMessage: "unauthorized" });
+    } else {
+      BlogsDB.create({
+        title: req.body.title,
+        body: req.body.body,
+        userId: data.user._id,
+      })
+        .then((savedBlog) => {
+          res.status(201).json(savedBlog);
+        })
+        .catch((err) => {
+          console.log("Error: ", err);
+        });
+    }
+  });
+});
+
+// blogs api here
+app.get("/api/allBlogs", verifyToken, (req, res) => {
+  BlogsDB.find()
+    .populate("userId")
+    .then((blogs) => {
+      res.status(200).json(blogs);
+    })
+    .catch((err) => {
+      console.log("Error: ", err);
+    });
 });
 
 // listen to port 2020
