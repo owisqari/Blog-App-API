@@ -4,14 +4,32 @@ const Schema = mongoose.Schema;
 
 const usersSchema = new Schema(
   {
-    username: String,
+    username: {
+      type: String,
+      required: true,
+    },
     password: {
       type: String,
       select: false,
     },
-    email: String,
-    about: String,
-    city: String,
+    email: {
+      type: String,
+      required: true,
+    },
+    about: {
+      type: String,
+      required: true,
+    },
+    city: {
+      type: String,
+      required: true,
+    },
+    blogId: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "Blogs",
+      },
+    ],
   },
   {
     timestamps: true,

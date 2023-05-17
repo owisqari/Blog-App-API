@@ -44,13 +44,36 @@ const verifyToken = (req, res, next) => {
 
   jwt.verify(token, process.env.JWT_SECRET, (err, data) => {
     if (err) {
-      return res.status(401).json({ errorMessage: "unauthorized" });
+      return res.status(401).json({ errorMessage: "unverified" });
     } else {
+      res.locals.currentUser = data;
+      res.locals.userId = data.userId;
+      res.locals.token = token;
       next();
     }
-    return data;
   });
 };
+
+// auth user middleware
+const authUser = (req, res, next) => {
+  BlogsDB.findById(req.body.id)
+    .then((blog) => {
+      if (blog) {
+        if (blog.userId == res.locals.userId) {
+          res.locals.blog = blog;
+          next();
+        } else {
+          res.status(401).json({ message: "You are unauthorized" });
+        }
+      } else {
+        res.status(400).json({ message: "Blog not found" });
+      }
+    })
+    .catch((err) => {
+      console.log(err);
+    });
+};
+
 //home route here (render the home page)
 app.get("/", (req, res) => {
   UsersDB.find()
@@ -327,9 +350,13 @@ app.post("/api/login", (req, res) => {
           .compare(password, hash)
           .then((isPassword) => {
             if (isPassword) {
-              const token = jwt.sign({ user }, process.env.JWT_SECRET, {
-                expiresIn: "1h",
-              });
+              const token = jwt.sign(
+                { userId: user._id },
+                process.env.JWT_SECRET,
+                {
+                  expiresIn: "1h",
+                }
+              );
               res.status(200).json({ token });
             } else {
               res.status(401).json({ message: "Wrong credentials" });
@@ -362,75 +389,112 @@ app.post("/api/register", (req, res) => {
   const email = req.body.email;
   const city = req.body.city;
   const about = req.body.about;
-  const saltRounds = 10;
-  if (password && username && email && city && about) {
-    UsersDB.findOne({ username }).then((user) => {
-      if (user) {
-        res.status(400).json({ message: "Username already exist" });
-      } else {
-        bcrypt
-          .genSalt(saltRounds)
-          .then(() => {
-            return bcrypt.hash(password, saltRounds);
-          })
-          .then((hash) => {
-            UsersDB.create({
-              username: username,
-              password: hash,
-              email: email,
-              city: city,
-              about: about,
-            })
-              .then((savedUser) => {
-                const token = jwt.sign({ savedUser }, process.env.JWT_SECRET, {
-                  expiresIn: "1h",
-                });
-                res.status(201).json({ token, savedUser });
-              })
-              .catch((err) => {
-                console.log("Error: ", err);
-              });
+
+  // Validate the input
+  if (!username || !password || !email || !city || !about) {
+    res.status(400).json({ message: "Please fill all the fields" });
+    return;
+  }
+
+  // Check if the username already exists
+  UsersDB.findOne({ username }).then((user) => {
+    if (user) {
+      res.status(400).json({ message: "Username already exist" });
+      return;
+    }
+
+    // Hash the password
+    bcrypt
+      .hash(password, saltRounds)
+      .then((hash) => {
+        // Create the user
+        UsersDB.create({
+          username: username,
+          password: hash,
+          email: email,
+          city: city,
+          about: about,
+        })
+          .then((savedUser) => {
+            // Generate a JWT token
+            const token = jwt.sign(
+              { userId: savedUser._id },
+              process.env.JWT_SECRET,
+              {
+                expiresIn: "1h",
+              }
+            );
+
+            // Return the token
+            res.status(201).json({ token });
           })
           .catch((err) => {
-            console.error(err);
+            console.log("Error: ", err);
           });
-      }
-    });
-  } else {
-    res.status(400).json({ message: "Please fill all the fields" });
-  }
+      })
+      .catch((err) => {
+        console.error(err);
+      });
+  });
 });
 
+// create blog api here
 app.post("/api/createBlog", verifyToken, (req, res) => {
-  const token = req.headers.authorization.split(" ")[1];
-  jwt.verify(token, process.env.JWT_SECRET, (err, data) => {
-    if (err) {
-      res.status(401).json({ errorMessage: "unauthorized" });
-    } else {
-      BlogsDB.create({
-        title: req.body.title,
-        body: req.body.body,
-        userId: data.user._id,
+  BlogsDB.create({
+    title: req.body.title,
+    body: req.body.body,
+    userId: res.locals.userId,
+  })
+    .then((savedBlog) => {
+      UsersDB.findByIdAndUpdate(res.locals.userId, {
+        $push: { blogId: savedBlog._id },
       })
-        .then((savedBlog) => {
+        .then(() => {
           res.status(201).json(savedBlog);
         })
         .catch((err) => {
-          console.log("Error: ", err);
+          console.log(err);
         });
-    }
-  });
+    })
+    .catch((err) => {
+      console.log("Error: ", err);
+    });
 });
 
 // blogs api here
 app.get("/api/allBlogs", verifyToken, (req, res) => {
   BlogsDB.find()
-    .populate("userId")
     .then((blogs) => {
       res.status(200).json(blogs);
     })
     .catch((err) => {
       console.log("Error: ", err);
+    });
+});
+
+// delete blog api here
+app.delete("/api/deleteBlog", verifyToken, authUser, (req, res) => {
+  res.locals.blog
+    .deleteOne()
+    .then(() => {
+      res.status(200).json({ blog: res.locals.blog, message: "Blog deleted" });
+    })
+    .catch((err) => {
+      console.log(err);
+    });
+});
+
+// update blog api here
+app.put("/api/updateBlog", verifyToken, authUser, (req, res) => {
+  res.locals.blog.title = req.body.title;
+  res.locals.blog.body = req.body.body;
+  res.locals.blog
+    .save()
+    .then((updateBlog) => {
+      res.status(200).json({ updateBlog: updateBlog, message: "Blog updated" });
+    })
+    .catch((err) => {
+      console.log(err);
     });
 });
 
