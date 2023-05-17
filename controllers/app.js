@@ -498,6 +498,7 @@ app.put("/api/updateBlog", verifyToken, authUser, (req, res) => {
     });
 });
 
+BlogsDB.find().wh;
 // listen to port 2020
 app.listen(process.env.PORT, () => {
   console.log("Server running on port 8080");
