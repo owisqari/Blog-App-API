@@ -6,11 +6,15 @@ const cookieParser = require("cookie-parser");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const session = require("express-session");
-const UsersDB = require("../modules/Users");
-const BlogsDB = require("../modules/Blogs");
+const UsersDB = require("../models/Users");
+const BlogsDB = require("../models/Blogs");
+const adminRouter = require("../routers/admin");
+const apiRouter = require("../routers/APIs");
+const { verifyToken, BlogAuthUser } = require("../middlewares/auth");
 require("dotenv").config();
 const saltRounds = Number(process.env.SALT_ROUNDS);
 
+app.use("/api", apiRouter);
 app.use(cookieParser());
 app.use(
   session({
@@ -28,146 +32,11 @@ url
   .catch((err) => {
     console.log("Cannot connect to the database", err);
   });
+app.use("/admin", adminRouter);
 
 //config ejs
 app.set("view engine", "ejs");
 app.set("views", "./views");
-
-// verify token middleware
-const verifyToken = (req, res, next) => {
-  // return res.send(req.headers);
-  if (!req.headers.authorization) {
-    return res.status(401).json({ errorMessage: "unauthorized" });
-  }
-
-  const token = req.headers.authorization.split(" ")[1];
-
-  jwt.verify(token, process.env.JWT_SECRET, (err, data) => {
-    if (err) {
-      return res.status(401).json({ errorMessage: "unverified" });
-    } else {
-      res.locals.currentUser = data;
-      res.locals.userId = data.userId;
-      res.locals.token = token;
-      next();
-    }
-  });
-};
-
-// auth user middleware
-const authUser = (req, res, next) => {
-  BlogsDB.findById(req.body.id)
-    .then((blog) => {
-      if (blog) {
-        if (blog.userId == res.locals.userId) {
-          res.locals.blog = blog;
-          next();
-        } else {
-          res.status(401).json({ message: "You are unauthorized" });
-        }
-      } else {
-        res.status(400).json({ message: "Blog not found" });
-      }
-    })
-    .catch((err) => {
-      console.log(err);
-    });
-};
-
-//home route here (render the home page)
-app.get("/", (req, res) => {
-  UsersDB.find()
-    .then((users) => {
-      res.render("home.ejs", { users, isLogged: req.session.userId });
-    })
-    .catch((err) => {
-      console.log("Error: ", err);
-    });
-});
-
-// signup route here (render the signup form)
-app.get("/signup", (req, res) => {
-  res.render("signup.ejs", { isLogged: req.session.userId });
-});
-
-//signup route and logic here (use bcrypt to hash the password)
-app.post("/signup", (req, res) => {
-  const username = req.body.username;
-  const password = req.body.password;
-  const email = req.body.email;
-  const city = req.body.city;
-  const about = req.body.about;
-  bcrypt
-    .genSalt(saltRounds)
-    .then(() => {
-      return bcrypt.hash(password, saltRounds);
-    })
-    .then((hash) => {
-      UsersDB.create({
-        username: username,
-        password: hash,
-        email: email,
-        city: city,
-        about: about,
-      })
-        .then(() => {
-          res.redirect("/login");
-        })
-        .catch((err) => {
-          console.log("Error: ", err);
-        });
-    })
-    .catch((err) => console.error(err.message));
-});
-
-// login route here (render the login form)
-app.get("/login", (req, res) => {
-  res.render("login.ejs", { isLogged: req.session.userId });
-});
-// login route and logic here (use bcrypt to compare the password)
-app.post("/login", (req, res) => {
-  const username = req.body.username;
-  const password = req.body.password;
-
-  UsersDB.findOne({ username })
-    .then((user) => {
-      if (user) {
-        const hash = user.password;
-        bcrypt.compare(password, hash).then((isPassword) => {
-          if (isPassword) {
-            req.session.userId = user._id;
-            console.log(req.session);
-            res.redirect("/");
-          } else {
-            console.log("User not found");
-            res.redirect("/login");
-          }
-        });
-      } else {
-        console.log("User not found");
-        res.redirect("/login");
-      }
-    })
-    .catch((err) => {
-      console.log("Error: ", err);
-    });
-});
-//you can use this to check if the user is logged in or not
-app.get("/profile", (req, res) => {
-  if (req.session.userId) {
-    UsersDB.findOne({ _id: req.session.userId }).then((user) => {
-      res.render("profile.ejs", { user });
-    });
-  } else {
-    res.redirect("/login");
-  }
-});
-
-// logout route here (destroy the session)
-app.get("/logout", (req, res) => {
-  req.session.destroy();
-  res.redirect("/");
-});
 
 // get all users api here
 app.get("/list", (req, res) => {
@@ -357,7 +226,7 @@ app.post("/api/login", (req, res) => {
                   expiresIn: "1h",
                 }
               );
-              res.status(200).json({ token });
+              res.status(200).json({ token, user: user._id });
             } else {
               res.status(401).json({ message: "Wrong credentials" });
             }
@@ -473,7 +342,7 @@ app.get("/api/allBlogs", verifyToken, (req, res) => {
 });
 
 // delete blog api here
-app.delete("/api/deleteBlog", verifyToken, authUser, (req, res) => {
+app.delete("/api/deleteBlog", verifyToken, BlogAuthUser, (req, res) => {
   res.locals.blog
     .deleteOne()
     .then(() => {
@@ -485,20 +354,18 @@ app.delete("/api/deleteBlog", verifyToken, authUser, (req, res) => {
 });
 
 // update blog api here
-app.put("/api/updateBlog", verifyToken, authUser, (req, res) => {
+app.put("/api/updateBlog", verifyToken, BlogAuthUser, (req, res) => {
   res.locals.blog.title = req.body.title;
   res.locals.blog.body = req.body.body;
   res.locals.blog
     .save()
     .then((updateBlog) => {
-      res.status(200).json({ updateBlog: updateBlog, message: "Blog updated" });
+      res.status(200).json({ updateBlog, message: "Blog updated" });
     })
     .catch((err) => {
       console.log(err);
     });
 });
-
-BlogsDB.find().wh;
 // listen to port 2020
 app.listen(process.env.PORT, () => {
   console.log("Server running on port 8080");
