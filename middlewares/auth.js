@@ -1,3 +1,7 @@
+const jwt = require("jsonwebtoken");
+const BlogsDB = require("../models/Blogs");
+require("dotenv").config();
+
 // verify token middleware
 exports.verifyToken = (req, res, next) => {
   // return res.send(req.headers);

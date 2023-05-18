@@ -8,14 +8,6 @@ const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
 require("dotenv").config();
 
-router.use(cookieParser());
-router.use(
-  session({
-    secret: process.env.SECRET,
-  })
-);
-router.use(bodyParser.urlencoded({ extended: false }));
-
 //home route here (render the home page)
 router.get("/", (req, res) => {
   UsersDB.find()
